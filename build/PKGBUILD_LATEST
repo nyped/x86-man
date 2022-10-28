@@ -1,0 +1,39 @@
+# Maintainer: lennypeers <lennypeers+aur gmail>
+
+pkgname=x86-man-git
+conflicts=(x86-man)
+provides=(x86-man)
+pkgver=28262022
+pkgrel=1
+pkgdesc="Intel® 64 and IA-32 Architectures Software Developer’s Manual"
+arch=(any)
+url=https://github.com/nyped/x86-man
+license=(Unlicense)
+depends=(man-db)
+makedepends=(
+  coreutils
+  go-md2man
+  gzip
+  make
+  pandoc
+  wget
+)
+source=("git+${url}.git")
+sha512sums=(SKIP)
+
+pkgver() {
+  date "+%d%M%Y"
+}
+
+build() {
+  cd "${pkgname%-*}"
+  make scrap
+  make populate
+}
+
+package() {
+  cd "${pkgname%-*}"
+  make DESTDIR="$pkgdir/usr" install
+}
+
+# vim: set ft=sh ts=8 sts=8 sw=2 et:

@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+PANDOC_FLAGS="--filter ./x86-man/filter.py"
+PANDOC_FLAGS+=" --to markdown+grid_tables-simple_tables+multiline_tables"
+DATE="$(date '+%B %Y')"
+DEST_DIR=man7
+WORK_DIR=work
+HTML_SOURCE=https://www.felixcloutier.com/x86/
+
+# shellcheck disable=SC2086
+function html_to_man() {
+  base=${1##*/} base=${base%.html} target=man7/x86-"$base".7.gz
+  echo writting "$target"
+  pandoc $PANDOC_FLAGS "$1" > "$WORK_DIR/$base.tmp"
+  cat x86-man/header.md "$WORK_DIR/$base.tmp" | \
+    sed -e 's/^# /# NAME\n/' -e "s/DATE/$DATE/" -e "s/NAME/$base/g" | \
+      go-md2man | gzip -9 > "$target"
+}
+
+function usage() {
+  cat <<EOF
+usage: $0 <cmd | path>
+
+with command in:
+-s, --scrap      scrap $HTML_SOURCE
+-h, --help       show this message
+EOF
+}
+
+mkdir -p $WORK_DIR $DEST_DIR
+
+case "$1" in
+  -h | --help)
+    usage
+    ;;
+
+  -s | --scrap)
+    wget -r -U google "$HTML_SOURCE"  # lol
+    ;;
+
+  *)
+    [[ -d $1 ]] || {
+      usage >&2
+      exit 255
+    }
+    for file in "$1"/*.html; do
+      html_to_man "$file"
+    done
+    ;;
+esac
+
+# vim:set ts=8 sts=2 sw=2 et:
